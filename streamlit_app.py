@@ -1,41 +1,25 @@
 import streamlit as st
 import pandas as pd
-import os
+import json
 
 st.set_page_config(page_title="የቁጠባ እና ብድር ሲስተም", layout="wide")
 st.title("🏦 የገንዘብ ብድር እና ቁጠባ ማህበር ዘመናዊ ሲስተም")
 
-# 💾 በቋሚነት ኮምፒውተር ላይ መረጃ መያዣ የኤክሴል ፋይል
-DB_FILE = "sacco_database.xlsx"
+# Initialize session state for data storage
+if "members_db" not in st.session_state:
+    st.session_state.members_db = {}
 
-# ፋይሉ አስቀድሞ ካለ ያነባል፣ ከሌለ አዲስ ባዶ መዋቅር ይፈጥራል
-if os.path.exists(DB_FILE):
-    try:
-        df_load = pd.read_excel(DB_FILE, dtype={"መታወቂያ ቁጥር (ID)": str})
-        members_db = df_load.set_index("መታወቂያ ቁጥር (ID)").to_dict(orient="index")
-    except Exception:
-        members_db = {}
-else:
-    members_db = {}
+members_db = st.session_state.members_db
 
-# መረጃን ወደ ኤክሴል ፋይል የመቆጠቢያ ተግባር
-def save_data_to_excel(db):
-    if db:
-        df_save = pd.DataFrame.from_dict(db, orient="index")
-        df_save.index.name = "መታወቂያ ቁጥር (ID)"
-        df_save.reset_index().to_excel(DB_FILE, index=False)
-    else:
-        if os.path.exists(DB_FILE):
-            try:
-                os.remove(DB_FILE)
-            except Exception:
-                pass
+# Display current database status
+with st.sidebar:
+    st.info(f"📊 አባላት በሲስተሙ: {len(members_db)}")
 
 # የጎንዮሽ ማውጫ (Sidebar)
 menu = st.sidebar.selectbox("ያሉ አማራጮች", ["👤 አባል መመዝገቢያ", "💰 የወር ቁጠባ ማስገቢያ", "💵 የብድር አገልግሎት", "📅 የብድር ክፍያ መመዝገቢያ", "📊 ጠቅላላ ሪፖርት"])
 
 # --- 1. አባል መመዝገቢያ ገጽ ---
-if menu == "👤 አባል መመዝገቢያ":
+if menu == "👤 አባል መ���ዝገቢያ":
     st.header("👤 አዲስ አባል መመዝገቢያ ፎርም")
     m_id = st.text_input("የአባል መታወቂያ ቁጥር (ID):")
     m_name = st.text_input("የአባል ሙሉ ስም:")
@@ -48,14 +32,15 @@ if menu == "👤 አባል መመዝገቢያ":
             else:
                 members_db[m_id] = {
                     "የአባል ስም": m_name,
-                    "ጠቅላላ ቁ���ባ (ብር)": 0.0,
+                    "ጠቅላላ ቁጠባ (ብር)": 0.0,
                     "ብድር ሁኔታ": "የለበትም",
                     "የተበደረው ጠቅላላ (ብር)": 0.0,
                     "በእጅ የተሰጠ 90% (ብር)": 0.0,
                     "የቀረው ዕዳ (ብር)": 0.0
                 }
-                save_data_to_excel(members_db)
-                st.success(f"✅ አባል {m_name} በተሳካ ሁኔታ ተመዝግቧል! (መረጃው በኤክሴል ተቀምጧል)")
+                st.session_state.members_db = members_db
+                st.success(f"✅ አባል {m_name} በተሳካ ሁኔታ ተመዝግቧል!")
+                st.rerun()
         else:
             st.warning("⚠️ እባክዎ ሁሉንም ሳጥኖች ይሙሉ!")
 
@@ -69,8 +54,9 @@ elif menu == "💰 የወር ቁጠባ ማስገቢያ":
     if save_btn:
         if s_id in members_db:
             members_db[s_id]["ጠቅላላ ቁጠባ (ብር)"] += amount
-            save_data_to_excel(members_db)
+            st.session_state.members_db = members_db
             st.success(f"✅ ለ{members_db[s_id]['የአባል ስም']} {amount:,.2f} ብር ቁጠባ ተመዝግቧል።")
+            st.rerun()
         else:
             st.error("❌ ይህ መታወቂያ በሲስተሙ ውስጥ አልተገኘም!")
 
@@ -98,10 +84,11 @@ elif menu == "💵 የብድር አገልግሎት":
                 member["በእጅ የተሰጠ 90% (ብር)"] = net_payout
                 member["የቀረው ዕዳ (ብር)"] = loan_amount
                 
-                save_data_to_excel(members_db)
+                st.session_state.members_db = members_db
                 st.success(f"🎉 ለ{member['የአባል ስም']} ብድር ተፈቅዷል!")
                 st.info(f"💵 በእጅ የሚሰጠው ገንዘብ (90%)፦ {net_payout:,.2f} ብር \n\n"
                         f"📅 የወርሃዊ ክፍያ (ለ36 ወራት)፦ {total_monthly:,.2f} ብር (ዋና፦ {monthly_principal:,.2f} + ወለድ 2%፦ {monthly_interest:,.2f})")
+                st.rerun()
         else:
             st.error("❌ ይህ መታወቂያ በሲስተሙ ውስጥ አልተገኘም!")
 
@@ -133,7 +120,8 @@ elif menu == "📅 የብድር ክፍያ መመዝገቢያ":
                     st.success(f"🎉 {member['የአባል ስም']} ብድሩን ሙሉ በሙሉ ከፍሎ ጨርሷል!")
                 else:
                     st.success(f"✅ ክፍያ ተመዝግቧል። የቀረው ጠቅላላ ዋና ዕዳ፦ {member['የቀረው ዕዳ (ብር)']:,.2f} ብር")
-                save_data_to_excel(members_db)
+                st.session_state.members_db = members_db
+                st.rerun()
         else:
             st.info(f"💡 {member['የአባል ስም']} ላይ ምንም ዓይነት የብድር ዕዳ የለም።")
     elif p_id:
@@ -142,8 +130,40 @@ elif menu == "📅 የብድር ክፍያ መመዝገቢያ":
 # --- 5. የሪፖርት ገጽ ---
 elif menu == "📊 ጠቅላላ ሪፖርት":
     st.header("📊 ጠቅላላ የአባላት፣ የቁጠባ እና የብድር ሪፖርት")
+    
     if members_db:
         df = pd.DataFrame.from_dict(members_db, orient="index")
+        
+        # Summary statistics
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("አጠቃላይ አባላት", len(members_db))
+        with col2:
+            total_savings = df["ጠቅላላ ቁጠባ (ብር)"].sum()
+            st.metric("ጠቅላላ ቁጠባ (ብር)", f"{total_savings:,.2f}")
+        with col3:
+            active_loans = len(df[df["ብድር ሁኔታ"] == "ያለበት"])
+            st.metric("የናሙና ብድር", active_loans)
+        with col4:
+            total_debt = df["የቀረው ዕዳ (ብር)"].sum()
+            st.metric("ጠቅላላ ተጠራጣሪ ዕዳ (ብር)", f"{total_debt:,.2f}")
+        
+        st.divider()
+        st.subheader("📋 በዝርዝር ዝርዝር")
         st.dataframe(df, use_container_width=True)
+        
+        # Export option
+        if st.button("📥 ሪፖርት ወደ CSV ወረጂ"):
+            csv = df.to_csv()
+            st.download_button(
+                label="CSV ዝርዝር ያውርዱ",
+                data=csv,
+                file_name="sacco_report.csv",
+                mime="text/csv"
+            )
     else:
         st.info("📌 እስካሁን በሲስተሙ ላይ የተመዘገበ መረጃ የለም።")
+
+# Footer
+st.divider()
+st.caption("🏦 የገንዘብ ብድር እና ቁጠባ ማህበር ዘመናዊ ሲስተም | SACCO System v1.0")
