@@ -211,7 +211,7 @@ elif menu == "📊 ጠቅላላ ሪፖርት":
             st.metric("💰 ጠቅላላ ቁጠባ", f"{total_savings:,.2f}")
         with col3:
             active_loans = len(df[df["ብድር ሁኔታ"] == "ያለበት"])
-            st.metric("📊 ገባሪ ብድር", active_loans)
+            st.metric("📊 ጠቅላላ ብድር", active_loans)
         with col4:
             total_debt = df["ቀሪ ዕዳ (ብር)"].sum()
             st.metric("📈 ቀሪ ዕዳ", f"{total_debt:,.2f}")
