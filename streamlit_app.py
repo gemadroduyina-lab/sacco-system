@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import json
 
-st.set_page_config(page_title="የቁጠባ እና ብድር ሲስተም", layout="wide")
-st.title("🏦 የገንዘብ ብድር እና ቁጠባ ማህበር ዘመናዊ ሲስተም")
+st.set_page_config(page_title="ተስፋ የቁጠባ እና ብድር ሲስተም", layout="wide")
+st.title("🏦 ተስፋ የገንዘብ ብድር እና ቁጠባ ማህበር")
 
 # Initialize session state for data storage
 if "members_db" not in st.session_state:
@@ -28,15 +28,27 @@ if menu == "👤 አባል መመዝገቢያ":
     
     with col1:
         m_id = st.text_input("የአባል መታወቂያ ቁጥር (ID):", key="member_id")
+        # Validate that ID contains only numbers
+        if m_id and not m_id.isdigit():
+            st.error("❌ መታወቂያ ቁጥር ሙሉ በሙሉ ቁጥር ብቻ ሊሆን ይገባል!")
+            m_id = ""
     
     with col2:
         m_name = st.text_input("የአባል ሙሉ ስም:", key="member_name")
+        # Validate that name contains only letters and spaces (Amharic)
+        if m_name and any(char.isdigit() for char in m_name):
+            st.error("❌ ስም ቁጥር ሊያካትት አይችልም! ፊደሎች ብቻ ይጻፉ።")
+            m_name = ""
     
     register_btn = st.button("አባል መዝግብ", key="register_btn")
     
     if register_btn:
         if m_id and m_name:
-            if m_id in members_db:
+            if not m_id.isdigit():
+                st.error("❌ መታወቂያ ቁጥር ሙሉ በሙሉ ቁጥር ብቻ ሊሆን ይገባል!")
+            elif any(char.isdigit() for char in m_name):
+                st.error("❌ ስም ቁጥር ሊያካትት አይችልም!")
+            elif m_id in members_db:
                 st.error(f"❌ ስህተት፦ መታወቂያ ቁጥር {m_id} ቀደም ብሎ ተመዝግቧል!")
             else:
                 members_db[m_id] = {
@@ -45,7 +57,7 @@ if menu == "👤 አባል መመዝገቢያ":
                     "ብድር ሁኔታ": "የለበትም",
                     "የተበደረው ጠቅላላ (ብር)": 0.0,
                     "በእጅ የተሰጠ 90% (ብር)": 0.0,
-                    "የቀረው ዕዳ (ብር)": 0.0
+                    "ቀሪ ዕዳ (ብር)": 0.0
                 }
                 st.session_state.members_db = members_db
                 st.success(f"✅ አባል {m_name} በተሳካ ሁኔታ ተመዝግቧል!")
@@ -118,7 +130,7 @@ elif menu == "💵 የብድር አገልግሎት":
                     member["ብድር ሁኔታ"] = "ያለበት"
                     member["የተበደረው ጠቅላላ (ብር)"] = loan_amount
                     member["በእጅ የተሰጠ 90% (ብር)"] = net_payout
-                    member["የቀረው ዕዳ (ብር)"] = loan_amount
+                    member["ቀሪ ዕዳ (ብር)"] = loan_amount
                     
                     st.session_state.members_db = members_db
                     st.success(f"🎉 ለ{member['የአባል ስም']} ብድር ተፈቅዷል!")
@@ -148,7 +160,7 @@ elif menu == "📅 የብድር ክፍያ መመዝገቢያ":
         if p_id in members_db:
             member = members_db[p_id]
             if member["ብድር ሁኔታ"] == "ያለበት":
-                st.warning(f"📌 {member['የአባል ስም']} ያለበት ጠቅላላ ዕዳ፦ {member['የቀረው ዕዳ (ብር)']:,.2f} ብር")
+                st.warning(f"📌 {member['የአባል ስም']} ያለበት ጠቅላላ ዕዳ፦ {member['ቀሪ ዕዳ (ብር)']:,.2f} ብር")
                 
                 monthly_principal = member["የተበደረው ጠቅላላ (ብር)"] / 36
                 monthly_interest = member["የተበደረው ጠቅላላ (ብር)"] * 0.02
@@ -169,15 +181,15 @@ elif menu == "📅 የብድር ክፍያ መመዝገቢያ":
                     if actual_principal_paid < 0:
                         actual_principal_paid = 0
                     
-                    member["የቀረው ዕዳ (ብር)"] -= actual_principal_paid
-                    if member["የቀረው ዕዳ (ብር)"] <= 0:
-                        member["የቀረው ዕዳ (ብር)"] = 0.0
+                    member["ቀሪ ዕዳ (ብር)"] -= actual_principal_paid
+                    if member["ቀሪ ዕዳ (ብር)"] <= 0:
+                        member["ቀሪ ዕዳ (ብር)"] = 0.0
                         member["ብድር ሁኔታ"] = "የለበትም"
                         st.success(f"🎉 {member['የአባል ስም']} ብድሩን ሙሉ በሙሉ ከፍሎ ጨርሷል!")
                         st.balloons()
                     else:
                         st.success(f"✅ ክፍያ ተመዝግቧል።")
-                        st.info(f"📊 የቀረው ዕዳ: {member['የቀረው ዕዳ (ብር)']:,.2f} ብር")
+                        st.info(f"📊 ቀሪ ዕዳ: {member['ቀሪ ዕዳ (ብር)']:,.2f} ብር")
                     st.session_state.members_db = members_db
             else:
                 st.info(f"💡 {member['የአባል ስም']} ላይ ምንም ዓይነት የብድር ዕዳ የለም።")
@@ -187,6 +199,7 @@ elif menu == "📊 ጠቅላላ ሪፖርት":
     st.header("📊 ጠቅላላ ሪፖርት")
     
     if members_db:
+        # Rename the column for display
         df = pd.DataFrame.from_dict(members_db, orient="index")
         
         # Summary statistics
@@ -198,10 +211,10 @@ elif menu == "📊 ጠቅላላ ሪፖርት":
             st.metric("💰 ጠቅላላ ቁጠባ", f"{total_savings:,.2f}")
         with col3:
             active_loans = len(df[df["ብድር ሁኔታ"] == "ያለበት"])
-            st.metric("📊 ፍቃዱ ብድር", active_loans)
+            st.metric("📊 ገባሪ ብድር", active_loans)
         with col4:
-            total_debt = df["የቀረው ዕዳ (ብር)"].sum()
-            st.metric("📈 ቅሪት ዕዳ", f"{total_debt:,.2f}")
+            total_debt = df["ቀሪ ዕዳ (ብር)"].sum()
+            st.metric("📈 ቀሪ ዕዳ", f"{total_debt:,.2f}")
         
         st.divider()
         st.subheader("📋 በዝርዝር ዝርዝር")
@@ -221,4 +234,4 @@ elif menu == "📊 ጠቅላላ ሪፖርት":
 
 # Footer
 st.divider()
-st.caption("🏦 የገንዘብ ብድር እና ቁጠባ ማህበር ዘመናዊ ሲስተም | SACCO System v1.0")
+st.caption("🏦 ተስፋ የገንዘብ ብድር እና ቁጠባ ማህበር | SACCO System v1.0")
