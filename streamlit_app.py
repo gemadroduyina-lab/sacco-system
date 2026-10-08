@@ -1081,6 +1081,7 @@ elif page == "💰 የወር ቁጠባ ማስገቢያ":
 
 
 # ============================================================
+# ============================================================
 # 3. LOAN SERVICE
 # ============================================================
 
@@ -1115,7 +1116,6 @@ elif page == "💵 የብድር አገልግሎት":
         member.get("የቀረው ዕዳ (ብር)", 0)
     )
 
-    # የማህበሩ መመሪያ ህግ መሰረት ከፍተኛ ብድር የቁጠባው 4 እጥፍ ነው
     max_loan = savings * 4
 
     col1, col2, col3 = st.columns(3)
@@ -1146,65 +1146,61 @@ elif page == "💵 የብድር አገልግሎት":
         )
 
     else:
-
-        loan_amount = st.number_input(
-            "የብድር መጠን (ብር)",
-            min_value=0.0,
-            max_value=float(max_loan),
-            step=100.0
-        )
-
-        term = st.selectbox(
-            "የብድር ጊዜ",
-            LOAN_TERMS,
-            format_func=lambda x: f"{x} ወር"
-        )
-
-        monthly_payment = calculate_monthly_payment(
-            loan_amount,
-            term
-        )
-
-        loan_fee = loan_amount * LOAN_FEE_RATE
-        cash_given = loan_amount - loan_fee
-
-        st.subheader("🧮 የብድር ስሌት")
-
-        calc1, calc2, calc3, calc4 = st.columns(4)
-
-        with calc1:
-            st.metric(
-                "የብድር መጠን",
-                f"{money(loan_amount)} ብር"
+        # ============================================================
+        # መፍትሄ፦ መረጃዎችን በፎርም ውስጥ ሰብስቦ መያዝ (ይህ ያለ አዝራር መጫን መፈቀድን ይከላከላል)
+        # ============================================================
+        with st.form("loan_approval_form"):
+            
+            loan_amount = st.number_input(
+                "የብድር መጠን (ብር)",
+                min_value=0.0,
+                max_value=float(max_loan),
+                step=100.0
             )
 
-        with calc2:
-            st.metric(
-                "10% የብድር ክፍያ",
-                f"{money(loan_fee)} ብር"
+            term = st.selectbox(
+                "የብድር ጊዜ",
+                LOAN_TERMS,
+                format_func=lambda x: f"{x} ወር"
             )
 
-        with calc3:
-            st.metric(
-                "በእጅ የሚሰጠው 90%",
-                f"{money(cash_given)} ብር"
+            monthly_payment = calculate_monthly_payment(
+                loan_amount,
+                term
             )
 
-        with calc4:
-            st.metric(
-                "የወር ክፍያ",
-                f"{money(monthly_payment)} ብር"
+            loan_fee = loan_amount * LOAN_FEE_RATE
+            cash_given = loan_amount - loan_fee
+
+            st.subheader("🧮 የብድር ስሌት ቅድመ-እይታ")
+
+            calc1, calc2, calc3, calc4 = st.columns(4)
+
+            with calc1:
+                st.metric("የብድር መጠን", f"{money(loan_amount)} ብር")
+
+            with calc2:
+                st.metric("10% የብድር ክፍያ", f"{money(loan_fee)} ብር")
+
+            with calc3:
+                st.metric("በእጅ የሚሰጠው 90%", f"{money(cash_given)} ብር")
+
+            with calc4:
+                st.metric("የወር ክፍያ", f"{money(monthly_payment)} ብር")
+
+            st.info(
+                "ℹ️ የ10% ብር ከብድሩ ውስጥ የሚቆረጥ የብድር ክፍያ ነው። "
+                "የአባሉ ዕዳ ግን የተበደረው ሙሉ መጠን ነው።"
             )
 
-        st.info(
-            "ℹ️ የ10% ብር ከብድሩ ውስጥ የሚቆረጥ የብድር ክፍያ ነው። "
-            "የአባሉ ዕዳ ግን የተበደረው ሙሉ መጠን ነው።"
-        )
+            # በፎርም ውስጥ st.button መሆን ያለበት st.form_submit_button ነው
+            submit_loan = st.form_submit_button(
+                "💵 ብድር መፍቀድ",
+                type="primary"
+            )
 
-        if st.button(
-            "💵 ብድር መፍቀድ",
-            type="primary"
-        ):
+        # አዝራሩ በትክክል ሲጫን ብቻ ስራውን ያከናውናል
+        if submit_loan:
 
             if loan_amount <= 0:
 
@@ -1240,9 +1236,7 @@ elif page == "💵 የብድር አገልግሎት":
                     loan_amount
                 )
 
-                # ============================================================
-                # የብድር ማስተካከያ ክፍል። ጠቅላላ ወለዱን ደምሮ ዕዳ ላይ መመዝገብ
-                # ============================================================
+                # ጠቅላላ ወለዱን ደምሮ ዕዳ ላይ መመዝገብ
                 total_interest_repayment = monthly_payment * term
                 member["የቀረው ዕዳ (ብር)"] = total_interest_repayment
 
