@@ -716,7 +716,7 @@ st.caption(
 # SIDEBAR
 # ============================================================
 
-st.sidebar.title("📋 ምናሌ")
+st.sidebar.title("📋 አርዕስት")
 
 page = st.sidebar.radio(
     "ገጽ ይምረጡ",
@@ -1115,6 +1115,7 @@ elif page == "💵 የብድር አገልግሎት":
         member.get("የቀረው ዕዳ (ብር)", 0)
     )
 
+    # የማህበሩ መመሪያ ህግ መሰረት ከፍተኛ ብድር የቁጠባው 4 እጥፍ ነው
     max_loan = savings * 4
 
     col1, col2, col3 = st.columns(3)
@@ -1127,7 +1128,7 @@ elif page == "💵 የብድር አገልግሎት":
 
     with col2:
         st.metric(
-            "ከፍተኛ ብድር",
+            "ከፍተኛ ብድር (4 እጥፍ)",
             f"{money(max_loan)} ብር"
         )
 
@@ -1239,9 +1240,11 @@ elif page == "💵 የብድር አገልግሎት":
                     loan_amount
                 )
 
-                member["የቀረው ዕዳ (ብር)"] = (
-                    loan_amount
-                )
+                # ============================================================
+                # የብድር ማስተካከያ ክፍል። ጠቅላላ ወለዱን ደምሮ ዕዳ ላይ መመዝገብ
+                # ============================================================
+                total_interest_repayment = monthly_payment * term
+                member["የቀረው ዕዳ (ብር)"] = total_interest_repayment
 
                 member["የተከፈለ ወለድ (ብር)"] = 0.0
                 member["የተከፈለ ዋና ብድር (ብር)"] = 0.0
@@ -1264,11 +1267,11 @@ elif page == "💵 የብድር አገልግሎት":
 
                 st.info(
                     f"10% የብድር ክፍያ = {money(loan_fee)} ብር | "
-                    f"በእጅ የተሰጠ = {money(cash_given)} ብር"
+                    f"በእጅ የተሰጠ = {money(cash_given)} ብር | "
+                    f"ጠቅላላ የሚመለስ ዕዳ (ከነወለዱ) = {money(total_interest_repayment)} ብር"
                 )
 
                 st.rerun()
-
 
 # ============================================================
 # 4. LOAN REPAYMENT
